@@ -33,23 +33,32 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
-      - name: Pre-Accept Android SDK Licenses
-        run: |
-          # บังคับสร้างโฟลเดอร์และตั้งค่าเพื่อยอมรับสิทธิ์การใช้งานล่วงหน้า ป้องกันปัญหา License Not Accepted
-          mkdir -p ~/.android
-          touch ~/.android/repositories.cfg
-          
-          # เรียกใช้ระบบเครื่องมือติดตั้งล่วงหน้าเพื่อตอบ Yes แก่ทุกสัญญาของ Google Android SDK
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/licenses
-          echo -e "\n244aeae42544344dd22e4e2da4c10375940633d1\n504667f4c0de7af1a06de9f4b1727b84351f2910\n2c3322bcf225f74519d31a585731543302619b2a\n235866171023dd4843b87a16e053d2d9ab0401d4\n84831b9409646a918e30573bab4c9c91346d8abd\n1819743003591460166D4843B87A16E053D2D9AB0401D4" > /home/runner/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-
-      - name: Auto-Locate and Build APK
+      - name: Auto-Locate and Pre-Configure Layout
         run: |
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
           
-          # สั่งบิวด์ระบบ Android Debug โดยตั้งค่าข้ามการถาม License แบบปกติ
-          buildozer -v android debug
+          # สร้างโครงสร้างสิทธิ์ของ Android SDK เพื่อบังคับข้ามกระบวนการตรวจสอบสิทธิ์ล่วงหน้า 100%
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/licenses
+          
+          # พิมพ์ยืนยันรหัสยอมรับสิทธิ์ Android ทุกเวอร์ชัน (รวมถึง Build-Tools 37 ตัวล่าสุด)
+          echo -e "\n244aeae42544344dd22e4e2da4c10375940633d1\n504667f4c0de7af1a06de9f4b1727b84351f2910\n2c3322bcf225f74519d31a585731543302619b2a\n235866171023dd4843b87a16e053d2d9ab0401d4\n84831b9409646a918e30573bab4c9c91346d8abd\n1819743003591460166D4843B87A16E053D2D9AB0401D4" > /home/runner/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo -e "\n8546085b865e2ad6cfa2b3ccb949be889d1362e4" > /home/runner/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+
+      - name: Build APK with Auto Accept Configuration
+        run: |
+          # ใช้คำสั่งส่งคีย์ 'y' รัวๆ ครอบกระบวนการรัน เพื่อปลดล็อกในกรณีที่ระบบคอมไพเลอร์เปลี่ยนโฟลเดอร์สแกน
+          yes | buildozer -v android debug || true
+          
+          # ตรวจสอบความถูกต้องรอบสุดท้ายหากระบบบิวด์สำเร็จสมบูรณ์
+          if [ -d "bin" ] && [ "$(ls -A bin)" ]; then
+            echo "สร้างไฟล์แอปสำเร็จแล้ว!"
+          else
+            # หากยังไม่เจอตัวจัดการ ให้บังคับรันคำสั่งตรงเพื่อป้องกันกระบวนการหลุด
+            buildozer -v android debug
+          fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
