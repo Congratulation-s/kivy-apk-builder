@@ -38,7 +38,6 @@ jobs:
 
       - name: Prepare Workspace Files
         run: |
-          # ค้นหาและดึงไฟล์คอนฟิกหลักมาไว้ที่โฟลเดอร์นอกสุดล่วงหน้า เพื่อป้องกันโครงสร้างโฟลเดอร์คลาดเคลื่อน
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
 
@@ -48,18 +47,22 @@ jobs:
           ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
           ANDROID_AUTO_ACCEPT_SDK_LICENSES: 'true'
         run: |
-          # ยอมรับข้อตกลงลิขสิทธิ์ทั้งหมดของ SDK ผ่านตัวระบบหลักก่อนเริ่มทำงาน
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           
-          # ส่งค่าตำแหน่ง Path ของจริงเข้าไปในระบบคอมไพล์
           export ANDROID_SDK_PATH="$ANDROID_HOME"
           export ANDROID_NDK_PATH="$ANDROID_HOME/ndk/27.3.13750724"
           
-          # 🔥 ส่วนเซฟหน่วยความจำ: ซ่อน Log ยาวๆ ลงไฟล์ เพื่อไม่ให้หน้าเว็บเบราว์เซอร์ของมือถือคุณค้างหรือเด้งหลุด
-          # ระบบจะรันเงียบๆ จนเสร็จ หากพังสำเร็จจะดึงเฉพาะจุดที่ผิดพลาดออกมาพ่นบอกตอนท้าย
-          yes | buildozer android debug > buildozer_output.log 2>&1 || (tail -n 100 buildozer_output.log && exit 1)
+          # เปลี่ยนกลับมาเป็น log_level = 2 แบบละเอียด แต่เซฟลงไฟล์เพื่อไม่ให้หน้าเว็บล่ม
+          yes | buildozer -v android debug > full_buildozer.log 2>&1
 
-      - name: Upload APK Artifact
+      - name: Upload Full Log Artifact (กรณีคอมไพล์ไม่ผ่าน)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildozer-error-log
+          path: full_buildozer.log
+
+      - name: Upload APK Artifact (กรณีคอมไพล์สำเร็จ)
         uses: actions/upload-artifact@v4
         with:
           name: m3u8-player-apk
