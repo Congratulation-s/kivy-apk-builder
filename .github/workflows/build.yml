@@ -28,10 +28,10 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -qq -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev libstdc++6 zip unzip libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
 
-      - name: Install Modern Buildozer & Cython
+      - name: Install Buildozer & Target Cython
         run: |
           pip install --quiet --upgrade pip
-          # 🔥 ส่วนสำคัญ: อัปเกรด Cython เป็นรุ่น 3.x ล่าสุด เพื่อให้แปลงรหัสผ่านด่านตรวจของ NDK r28c ได้อย่างสมบูรณ์
+          # บังคับล็อกเสถียรภาพ Cython 3.x คู่กับ NDK r28c ยุคปัจจุบัน เพื่อแก้บั๊ก compile พังดื้อๆ
           pip install --quiet buildozer cython>=3.0.0
 
       - name: Prepare Files
@@ -40,19 +40,32 @@ jobs:
           find . -name "main.py" -exec cp {} . \;
 
       - name: Compile Kivy APK Directly
+        id: compile
         run: |
           export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
           export P4A_python_version="3.11"
+          
+          # รันสร้างแอปแล้วบันทึกประวัติทั้งหมด
           buildozer -v android debug > full_build.log 2>&1
 
-      - name: Show Error Log Only If Failed
+      - name: Extract Clean HTML Log If Failed
+        # สคริปต์อัจฉริยะ: จะสกัดและพ่นเฉพาะ "เนื้อหา Error แท้ๆ ที่ไม่มีเครื่องหมาย # ปะปน" ออกมาโชว์ให้คุณเห็นไม่เกินครึ่งหน้าจอมือถือ
         if: failure()
         run: |
           echo "=========================================================="
-          echo "🎯 POINT OF FAILURE (LAST 40 LINES OF LOG):"
+          echo "🎯 ACTUAL ERROR LOG FOUND IN PROCESS:"
           echo "=========================================================="
-          tail -n 40 full_build.log
+          # กรองล้างประวัติขยะแวดล้อมและดึงจุดระเบิด 50 บรรทัดสุดท้ายออกแสดงผล
+          grep -v -E "^#|^[[:space:]]*#" full_build.log | tail -n 50 || tail -n 30 full_build.log
           echo "=========================================================="
+
+      - name: Upload Full Log Artifact
+        # บังคับส่งประวัติ Log ฉบับเต็มออกเป็นปุ่มกดดาวน์โหลดให้คุณตรวจสอบบนมือถือได้ตลอดเวลา
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildozer-debug-log
+          path: full_build.log
 
       - name: Upload APK
         if: success()
