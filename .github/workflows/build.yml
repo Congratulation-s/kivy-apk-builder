@@ -20,17 +20,18 @@ jobs:
 
       - name: Prepare Workspace Files
         run: |
-          # บังคับย้ายไฟล์คอนฟิกมาอยู่ที่โฟลเดอร์ด้านนอกสุดเพื่อป้องกันปัญหา Path หาไฟล์ไม่เจอ
+          # บังคับย้ายไฟล์คอนฟิกหลักมาอยู่ที่โฟลเดอร์ด้านนอกสุดเพื่อป้องการปัญหาระบบหาไฟล์ไม่เจอ
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
 
       - name: Build APK with Buildozer Action
-        uses: ArtemGovorov/buildozer-action@v1
+        # 🔥 แก้ไขจาก ArtemGovorov เป็น ArtemSBulgakov ซึ่งเป็นเวอร์ชันสากลและอัปเดตล่าสุดในปัจจุบัน
+        uses: ArtemSBulgakov/buildozer-action@v1
         with:
           workdir: .
           buildozer_version: stable
         env:
-          # 🔥 บังคับแมปตำแหน่ง SDK/NDK แท้ของ Ubuntu Runner เข้าสู่ Core ของ Action โดยตรง
+          # แมปตำแหน่งของเครื่องมือจำลอง Android SDK/NDK แท้ของระบบเพื่อความถูกต้อง
           ANDROID_SDK_PATH: /usr/local/lib/android/sdk
           ANDROID_NDK_PATH: /usr/local/lib/android/sdk/ndk/27.3.13750724
 
