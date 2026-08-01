@@ -24,7 +24,6 @@ jobs:
           python-version: '3.11'
 
       - name: Install Dependencies
-        # สั่งรันเงียบๆ (ใส่ -qq) เพื่อลดปริมาณตัวอักษรบนหน้าจอเว็บ
         run: |
           sudo apt-get update -qq
           sudo apt-get install -qq -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev libstdc++6 zip unzip
@@ -40,12 +39,25 @@ jobs:
           find . -name "main.py" -exec cp {} . \;
 
       - name: Compile Kivy APK
+        id: compile
         run: |
           export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
-          # 🔥 บังคับบันทึก Log ยาวๆ ลงไฟล์ full_build.log แทนการแสดงบนหน้าเว็บ (เว็บจะไม่เด้งแน่นอน)
+          # บันทึกข้อมูลลงไฟล์เงียบๆ ก่อนเพื่อป้องกันหน้าเว็บเด้งค้าง
           yes | buildozer -v android debug > full_build.log 2>&1
 
+      - name: Show Error Log Only If Failed
+        # 🔥 สคริปต์พิเศษ: จะทำงานเฉพาะเมื่อขั้นตอนคอมไพล์ด้านบนพังเท่านั้น
+        if: failure()
+        run: |
+          echo "=========================================================="
+          echo "❌ DETECTED BUILD FAILURE - SHOWING LAST 100 LINES OF LOG:"
+          echo "=========================================================="
+          # ดึงเฉพาะ 100 บรรทัดสุดท้ายที่เป็นจุดเกิดเหตุมาโชว์บนหน้าจอเว็บสั้นๆ
+          tail -n 100 full_build.log
+          echo "=========================================================="
+
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: m3u8-player-apk
