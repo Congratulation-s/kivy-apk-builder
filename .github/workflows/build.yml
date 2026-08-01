@@ -33,8 +33,13 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
-      - name: Build APK with Buildozer
+      - name: Auto-Locate and Build APK
         run: |
+          # ค้นหาไฟล์ตั้งค่าและโค้ดแอป หากพบว่าอยู่ผิดโฟลเดอร์จะดึงออกมาด้านนอกสุดทันที
+          find . -name "buildozer.spec" -exec cp {} . \;
+          find . -name "main.py" -exec cp {} . \;
+          
+          # เริ่มต้นสั่งบิวด์แอปพลิเคชันอย่างเป็นทางการ
           buildozer -v android debug
 
       - name: Upload APK Artifact
