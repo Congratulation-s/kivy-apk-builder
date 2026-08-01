@@ -33,13 +33,22 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
+      - name: Pre-Accept Android SDK Licenses
+        run: |
+          # บังคับสร้างโฟลเดอร์และตั้งค่าเพื่อยอมรับสิทธิ์การใช้งานล่วงหน้า ป้องกันปัญหา License Not Accepted
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          
+          # เรียกใช้ระบบเครื่องมือติดตั้งล่วงหน้าเพื่อตอบ Yes แก่ทุกสัญญาของ Google Android SDK
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/licenses
+          echo -e "\n244aeae42544344dd22e4e2da4c10375940633d1\n504667f4c0de7af1a06de9f4b1727b84351f2910\n2c3322bcf225f74519d31a585731543302619b2a\n235866171023dd4843b87a16e053d2d9ab0401d4\n84831b9409646a918e30573bab4c9c91346d8abd\n1819743003591460166D4843B87A16E053D2D9AB0401D4" > /home/runner/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+
       - name: Auto-Locate and Build APK
         run: |
-          # ค้นหาไฟล์ตั้งค่าและโค้ดแอป หากพบว่าอยู่ผิดโฟลเดอร์จะดึงออกมาด้านนอกสุดทันที
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
           
-          # เริ่มต้นสั่งบิวด์แอปพลิเคชันอย่างเป็นทางการ
+          # สั่งบิวด์ระบบ Android Debug โดยตั้งค่าข้ามการถาม License แบบปกติ
           buildozer -v android debug
 
       - name: Upload APK Artifact
