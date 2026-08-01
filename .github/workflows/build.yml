@@ -43,17 +43,16 @@ jobs:
         run: |
           export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
           export P4A_python_version="3.11"
-          
-          # 🔥 ถอดคำสั่ง buildozer android clean ออก เพื่อไม่ให้ไฟล์ล็อกโดนลบทำลายทิ้งก่อนเขียนข้อมูล
           buildozer -v android debug > full_build.log 2>&1
 
       - name: Show Error Log Only If Failed
         if: failure()
         run: |
           echo "=========================================================="
-          echo "🎯 POINT OF FAILURE (LAST 40 LINES OF LOG):"
+          echo "🎯 ACTUAL COMPILATION ERROR (CLEANED 200 LINES):"
           echo "=========================================================="
-          tail -n 40 full_build.log
+          # 🔥 ดึง 200 บรรทัดท้าย แต่ใช้คำสั่ง grep -v บังคับตัดบรรทัดที่ขึ้นต้นด้วยเครื่องหมาย '#' ออกทั้งหมด
+          tail -n 200 full_build.log | grep -v -E "^#|^[[:space:]]*#" || tail -n 30 full_build.log
           echo "=========================================================="
 
       - name: Upload APK
