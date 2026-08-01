@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,39 +18,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install System Dependencies and Android Tools
+      - name: Auto-Locate App Files
         run: |
-          sudo apt-get update
-          # สั่งติดตั้งระบบพื้นฐานพร้อมด้วยชุดคำสั่งจัดการสิทธิ์ของแอนดรอยด์ (sdkmanager) ผ่านระบบแพ็กเกจตรง
-          sudo apt-get install -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev google-android-cmdline-tools-12.0-installer || true
-
-      - name: Install Buildozer and Cython
-        run: |
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.33
-
-      - name: Pre-Configure Layout and Licenses
-        run: |
-          # บังคับย้ายไฟล์ใบสั่งและโค้ดแอปมาอยู่นอกสุดล่วงหน้าเพื่อความถูกต้อง
+          # บังคับดึงไฟล์ใบสั่งประกอบแอปและโค้ดแอปมาสแตนบายไว้ที่หน้าแรกนอกสุดเพื่อความแม่นยำ 100%
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
-          
-          # ยิงสิทธิ์กดยอมรับสัญญาอนุญาตล่วงหน้าในทุกโฟลเดอร์ที่เป็นไปได้ของ Buildozer
-          mkdir -p ~/.android && touch ~/.android/repositories.cfg
-          
-          # ผูกไฟล์ลิขสิทธิ์สากลล่วงหน้าเพื่อเตรียมพร้อมรัน
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/licenses || true
-          echo -e "\n244aeae42544344dd22e4e2da4c10375940633d1\n504667f4c0de7af1a06de9f4b1727b84351f2910\n2c3322bcf225f74519d31a585731543302619b2a\n235866171023dd4843b87a16e053d2d9ab0401d4\n84831b9409646a918e30573bab4c9c91346d8abd" > /home/runner/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
 
-      - name: Build APK Final Stage
-        run: |
-          # ใช้คำสั่งตอบตกลงอัตโนมัติในการรันครั้งสุดท้ายเพื่อความมั่นใจ
-          yes | buildozer -v android debug
+      - name: Build APK with Official Buildozer Action
+        uses: ArtemSBulgakov/buildozer-action@v1
+        with:
+          buildozer_version: master
+          command: buildozer -v android debug
+          repository_root: .
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
