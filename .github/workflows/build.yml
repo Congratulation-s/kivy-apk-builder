@@ -18,6 +18,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Official Android SDK
+        # ดึงเครื่องมือและระบบจัดการ SDK จัดวางระบบเตรียมพร้อมใช้งานล่วงหน้า
+        uses: android-actions/setup-android@v3
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -35,19 +39,24 @@ jobs:
 
       - name: Prepare Workspace Files
         run: |
-          # ค้นหาและคัดลอกไฟล์การตั้งค่าไปไว้ตําแหน่งหลักชั้นนอกสุดเพื่อความถูกต้อง
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
 
       - name: Compile Kivy APK Directly
         run: |
-          # 1. สั่งยอมรับลิขสิทธิ์ทั้งหมดล่วงหน้าในขั้นตอนนี้โดยตรง
-          mkdir -p ~/.android && touch ~/.android/repositories.cfg
+          # 1. จัดสรรและส่งค่าตำแหน่งเครื่องมือสากลจากระเบียบระบบให้ Buildozer รับทราบ
+          export ANDROID_SDK_PATH="$ANDROID_HOME"
           
-          # 2. บังคับล็อกปิดการอัปเดตซ้ำซ้อนผ่านตัวแปรระดับคำสั่งสากล
+          # ค้นหาตำแหน่งโฟลเดอร์ NDK บนเครื่องและดึงส่งเข้าตัวแปรระบบอัตโนมัติ
+          export ANDROID_NDK_PATH=$(ls -d $ANDROID_HOME/ndk/* | head -n 1)
+          
+          # 2. กดยอมรับลิขสิทธิ์ความปลอดภัยในระบบ SDK แท้ทั้งหมดล่วงหน้า
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          
+          # 3. บังคับยิงสิทธิ์กดยอมรับสัญญาอนุญาตผ่านตัวแปรระดับคำสั่งสากล
           export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
           
-          # 3. รันคำสั่งคอมไพล์โปรเจกต์ Kivy ทันที
+          # 4. เริ่มคอมไพล์ โดย Buildozer จะเข้าดึงไฟล์ 'aidl' จากตําแหน่งระบบแท้ไปใช้ทันที
           yes | buildozer -v android debug
 
       - name: Upload APK Artifact
