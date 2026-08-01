@@ -41,19 +41,17 @@ jobs:
       - name: Compile Kivy APK
         id: compile
         run: |
-          # ตั้งค่าสภาพแวดล้อมบังคับยอมรับลิขสิทธิ์ของ Android ทุกเงื่อนไข
           export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
-          
-          # 🔥 แก้ปัญหา Broken pipe: ถอดคำสั่ง 'yes |' ออกทั้งหมด แล้วสั่งรัน buildozer ตรงๆ เงียบๆ ลงไฟล์
           buildozer -v android debug > full_build.log 2>&1
 
       - name: Show Error Log Only If Failed
         if: failure()
         run: |
           echo "=========================================================="
-          echo "❌ DETECTED BUILD FAILURE - SHOWING LAST 100 LINES OF LOG:"
+          echo "🔍 SCANNING FOR ACTUAL ERRORS IN LOG FILE..."
           echo "=========================================================="
-          tail -n 100 full_build.log
+          # 🔥 ใช้คำสั่งพิเศษ ค้นหาคำผิดพลาดและดึงบรรทัดรอบข้างมาโชว์ 20 บรรทัดทันทีเพื่อความแม่นยำ
+          grep -i -C 20 -E "error|exception|failed" full_build.log || tail -n 100 full_build.log
           echo "=========================================================="
 
       - name: Upload APK
