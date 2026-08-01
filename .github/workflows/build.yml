@@ -26,7 +26,7 @@ jobs:
       - name: Install System Dependencies for Video Player
         run: |
           sudo apt-get update
-          sudo apt-get install -y scons build-essential libcleanfeed-dev viewnior libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev
+          sudo apt-get install -y scons build-essential viewnior libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev
           sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev libavdevice-dev
 
       - name: Install Buildozer and Cython
@@ -43,4 +43,3 @@ jobs:
         with:
           name: m3u8-player-apk
           path: bin/*.apk
-          
