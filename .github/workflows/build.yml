@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,51 +18,23 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Buildozer Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev
-
-      - name: Install Buildozer and Cython
-        run: |
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.33
-
       - name: Prepare Workspace Files
         run: |
+          # บังคับย้ายไฟล์คอนฟิกมาอยู่ที่โฟลเดอร์ด้านนอกสุดเพื่อป้องกันปัญหา Path หาไฟล์ไม่เจอ
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
 
-      - name: Build APK with Auto-Path Injection
-        env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
-          ANDROID_AUTO_ACCEPT_SDK_LICENSES: 'true'
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          
-          export ANDROID_SDK_PATH="$ANDROID_HOME"
-          export ANDROID_NDK_PATH="$ANDROID_HOME/ndk/27.3.13750724"
-          
-          # เปลี่ยนกลับมาเป็น log_level = 2 แบบละเอียด แต่เซฟลงไฟล์เพื่อไม่ให้หน้าเว็บล่ม
-          yes | buildozer -v android debug > full_buildozer.log 2>&1
-
-      - name: Upload Full Log Artifact (กรณีคอมไพล์ไม่ผ่าน)
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Build APK with Buildozer Action
+        uses: ArtemGovorov/buildozer-action@v1
         with:
-          name: buildozer-error-log
-          path: full_buildozer.log
+          workdir: .
+          buildozer_version: stable
+        env:
+          # 🔥 บังคับแมปตำแหน่ง SDK/NDK แท้ของ Ubuntu Runner เข้าสู่ Core ของ Action โดยตรง
+          ANDROID_SDK_PATH: /usr/local/lib/android/sdk
+          ANDROID_NDK_PATH: /usr/local/lib/android/sdk/ndk/27.3.13750724
 
-      - name: Upload APK Artifact (กรณีคอมไพล์สำเร็จ)
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: m3u8-player-apk
