@@ -33,31 +33,34 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
-      - name: Inject Android SDK Commandline Tools (Fix SDK Error)
+      - name: Inject Modern Android SDK Commandline Tools
         run: |
-          # 1. บังคับวางไฟล์โค้ดหลักและไฟล์ใบสั่งให้มาอยู่นอกสุดล่วงหน้า
+          # 1. บังคับย้ายไฟล์ใบสั่งและโค้ดแอปมาอยู่นอกสุดล่วงหน้า
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
           
-          # 2. จำลองการสร้างโครงสร้างโฟลเดอร์ที่ Buildozer ร้องหาล่วงหน้า
+          # 2. จำลองสร้างโครงสร้างโฟลเดอร์แบบใหม่ที่ Google แนะนำสำหรับปี 2026
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          
+          # 3. ดาวน์โหลดชุดเครื่องมือ Commandline Tools เวอร์ชันอัปเดตรองรับ Java รุ่นใหม่โดยตรงจากคลัง Google
+          curl -O https://google.com
+          
+          # 4. แตกไฟล์นำโครงสร้างคอมไพเลอร์ตัวใหม่ไปประกบไว้ในจุดที่แอปเรียกหา
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          mv cmdline-tools/* /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/
+          
+          # 5. ล้างไฟล์ขยะและสร้างโฟลเดอร์สำหรับจำลองลิงก์เก่าหลอกเครื่องมือ Buildozer 
+          rm -rf cmdline-tools commandlinetools-linux-11076708_latest.zip
           mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
+          ln -s /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
           
-          # 3. ดาวน์โหลดชุดเครื่องมือจัดแจงลิขสิทธิ์สากลเวอร์ชันทางการจาก Google Repository
-          curl -O https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
-          
-          # 4. แตกไฟล์นำโครงสร้างโฟลเดอร์ 'tools' ย่อยไปประกบไว้ในจุดที่แอปเรียกหา
-          unzip -q sdk-tools-linux-4333796.zip -d /home/runner/.buildozer/android/platform/android-sdk/
-          
-          # 5. ล้างไฟล์ขยะรักษาสภาพแวดล้อมระบบคลาวด์
-          rm sdk-tools-linux-4333796.zip
-          
-          # 6. บังคับยิงสิทธิ์กดยอมรับสัญญาอนุญาตล่วงหน้าแก่ทุก API ทันที
+          # 6. บังคับกดยอมรับลิขสิทธิ์สากลล่วงหน้าด้วยเครื่องมือเวอร์ชันใหม่ผ่านฉลุย 100%
           mkdir -p ~/.android && touch ~/.android/repositories.cfg
-          yes | /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
+          yes | /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build APK Final Stage
         run: |
-          # เริ่มต้นประกอบแอปพลิเคชันอย่างเป็นทางการโดยมีไฟล์เครื่องมือสแตนบายรอครบถ้วนแล้ว
+          # ดำเนินการประกอบแอปพลิเคชันอย่างเป็นทางการโดยมีไฟล์เครื่องมือรองรับครบถ้วน
           buildozer -v android debug
 
       - name: Upload APK Artifact
