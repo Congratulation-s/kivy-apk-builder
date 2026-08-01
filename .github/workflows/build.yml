@@ -18,38 +18,34 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Python 3.11
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install System Dependencies
+      - name: Install Dependencies
+        # สั่งรันเงียบๆ (ใส่ -qq) เพื่อลดปริมาณตัวอักษรบนหน้าจอเว็บ
         run: |
-          sudo apt-get update
-          sudo apt-get install -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev libstdc++6 zip unzip
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev libstdc++6 zip unzip
 
-      - name: Install Buildozer and Cython
+      - name: Install Buildozer
         run: |
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.33
+          pip install --quiet --upgrade pip
+          pip install --quiet buildozer cython==0.29.33
 
-      - name: Prepare Workspace Files
+      - name: Prepare Files
         run: |
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
 
-      - name: Compile Kivy APK Directly
+      - name: Compile Kivy APK
         run: |
-          # สร้างโครงสร้างข้อมูลล่วงหน้าเพื่อตอบรับสิทธิ์ลิขสิทธิ์ของ Google
-          mkdir -p ~/.android && touch ~/.android/repositories.cfg
-          
-          # บังคับระบบส่งคำสั่งอนุญาตทุกเงื่อนไขโดยอัตโนมัติ
           export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
-          
-          # สั่งให้ Buildozer สร้างไฟล์ APK ในโหมดดั้งเดิม (ระบบจะเคลียร์ปัญหา sdkmanager/aidl ตัวเองทั้งหมด)
-          yes | buildozer -v android debug
+          # 🔥 บังคับบันทึก Log ยาวๆ ลงไฟล์ full_build.log แทนการแสดงบนหน้าเว็บ (เว็บจะไม่เด้งแน่นอน)
+          yes | buildozer -v android debug > full_build.log 2>&1
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: m3u8-player-apk
