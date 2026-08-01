@@ -1,50 +1,51 @@
 [app]
-# (str) ชื่อของแอปพลิเคชันคุณ
+# (str) Title of your application
 title = M3U8 Cloud Player
 
-# (str) ชื่อแพ็กเกจห้ามซ้ำ (ตัวพิมพ์เล็กภาษาอังกฤษเท่านั้น)
+# (str) Package name
 package.name = m3u8cloudplayer
 
-# (str) โดเมนของแอปพลิเคชัน
+# (str) Package domain (needed for android packaging)
 package.domain = org.example
 
-# (str) โฟลเดอร์ตำแหน่งโค้ดหลัก
+# (str) Source code directory
 source.dir = .
 
-# (list) นามสกุลไฟล์ที่ต้องการรวมเข้าไปในแอป
+# (list) Source files to include (let empty to include all the files)
 source.include_exts = py,png,jpg,kv,atlas,ttf
 
-# (str) เวอร์ชันของแอปพลิเคชัน
+# (str) Application versioning (method 1)
 version = 0.1
 
-# (list) ไลบรารี Python ที่แอปต้องใช้ (เพิ่มโมดูลความปลอดภัย SSL ป้องกันแอปแครช)
-requirements = python3,kivy,requests,openssl,urllib3,certifi
+# (list) ไลบรารี Python ที่ถูกต้อง (ลบคำว่า android ออกไปแล้ว และล็อกเวอร์ชันเพื่อความเสถียร)
+requirements = python3==3.11.1,kivy==2.3.0,requests,openssl,urllib3,certifi
 
-# (str) บังคับทิศทางหน้าจอแนวตั้ง
+# (str) Supported orientations
 orientation = portrait
 
-# (int) เปิด/ปิด โหมดเต็มหน้าจอ (0 = ปิด, 1 = เปิด)
+# (int) Indicates if the application should be fullscreen or not
 fullscreen = 0
 
-# (list) ขอสิทธิ์การใช้งานอินเทอร์เน็ตของระบบแอนดรอยด์
+# (list) Permissions
 android.permissions = INTERNET
 
-# 🔒 ล็อกเวอร์ชันแอนดรอยด์สากล และสั่งกดยอมรับสัญญาอนุญาตผ่านระบบคลาวด์อัตโนมัติ
-android.api = 33
-android.minapi = 21
-android.ndk_api = 21
+# 🔒 ปรับระดับความปลอดภัยและรหัส API แอนดรอยด์ให้เข้าคู่กับชุดเครื่องมือ r28c ยุคใหม่
+android.api = 34
+android.minapi = 26
+android.ndk_api = 26
+android.build_tools_version = 34.0.0
 android.accept_sdk_license = True
 android.skip_update = False
 
-# (list) สถาปัตยกรรมชิปมือถือที่ต้องการรองรับ (ครอบคลุมมือถือแอนดรอยด์ 99% ในปัจจุบัน)
+# (list) The Android architectures to build for
 android.archs = arm64-v8a, armeabi-v7a
 
-# (bool) คัดลอกไลบรารีแทนการสร้างลิงก์จำลองเพื่อความเสถียรบน GitHub
+# (bool) Copy library instead of making a symbolic link
 android.copy_libs = 1
 
 [buildozer]
-# (int) ระดับการบันทึกประวัติการบิลด์ (2 = บันทึกข้อมูลละเอียดลงไฟล์สเปก)
+# (int) Log level
 log_level = 2
 
-# (int) แจ้งเตือนหากใช้งานสิทธิ์ผู้ดูแลระบบสูงสุด (1 = เปิด)
+# (int) Display warning if buildozer is run as root
 warn_on_root = 1
