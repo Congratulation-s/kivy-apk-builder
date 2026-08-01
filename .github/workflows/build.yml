@@ -42,22 +42,20 @@ jobs:
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
 
-      - name: Build APK with Auto-Path Injection
+            - name: Build APK with Auto-Path Injection
         env:
-          # 🔥 ส่วนสำคัญ: บังคับส่งค่าโครงสร้างระบบจริงให้ทูลเชนรับทราบโดยไม่ต้องใช้ Symlink
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
           ANDROID_AUTO_ACCEPT_SDK_LICENSES: 'true'
         run: |
-          # ยอมรับข้อตกลงลิขสิทธิ์ทั้งหมดของ SDK ผ่านทูลเชนมาตรฐานระบบก่อนเริ่มทำงาน
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           
-          # ส่งผ่านค่าตัวแปรตำแหน่งระบบลงไปในขณะสั่งรันคำสั่งแพ็กเกจ Buildozer
           export ANDROID_SDK_PATH="$ANDROID_HOME"
           export ANDROID_NDK_PATH="$ANDROID_HOME/ndk/27.3.13750724"
           
-          # เริ่มต้นกระบวนการคอมไพล์แอปพลิเคชัน
-          yes | buildozer -v android debug
+          # 🔥 แก้ไขตรงนี้: ถอดคำว่า -v ออก และสั่งให้บันทึก Log ลงไฟล์แทนการพ่นบนหน้าจอ
+          # วิธีนี้จะทำให้หน้าเว็บ GitHub ไม่ล่ม และทำงานเงียบๆ จนเสร็จ
+          yes | buildozer android debug > buildozer_output.log 2>&1 || (cat buildozer_output.log && exit 1)
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
