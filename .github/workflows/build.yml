@@ -23,11 +23,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install System Dependencies for Video Player
+      - name: Install Pure Buildozer Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y scons build-essential viewnior libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev
-          sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev libavdevice-dev
+          sudo apt-get install -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev
 
       - name: Install Buildozer and Cython
         run: |
