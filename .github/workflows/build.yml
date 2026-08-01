@@ -49,10 +49,10 @@ jobs:
         if: failure()
         run: |
           echo "=========================================================="
-          echo "🎯 ACTUAL COMPILATION ERROR (CLEANED 200 LINES):"
+          echo "🔍 SCANNING FOR ACTUAL COMPILATION ERRORS..."
           echo "=========================================================="
-          # 🔥 ดึง 200 บรรทัดท้าย แต่ใช้คำสั่ง grep -v บังคับตัดบรรทัดที่ขึ้นต้นด้วยเครื่องหมาย '#' ออกทั้งหมด
-          tail -n 200 full_build.log | grep -v -E "^#|^[[:space:]]*#" || tail -n 30 full_build.log
+          # 🔥 ตรวจจับคำว่า error: หรือ exception หรือ failed ในท่อนรันที่ไม่ใช่ขยะเครื่องหมาย # แล้วดึงข้อมูลรอบข้างออกมา 15 บรรทัด
+          grep -i -C 15 -E "error:|exception|failed to build" full_build.log | grep -v -E "^#|^[[:space:]]*#" || tail -n 40 full_build.log
           echo "=========================================================="
 
       - name: Upload APK
