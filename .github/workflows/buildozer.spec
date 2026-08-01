@@ -1,15 +1,15 @@
 [app]
-title = MiApp
-package.name = miapp
-package.domain = org.test
+title = M3U8 Cloud Player
+package.name = m3u8cloudplayer
+package.domain = org.example
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas
+source.include_exts = py,png,jpg,kv,atlas,ttf
 version = 0.1
-requirements = python3,kivy
+requirements = python3,kivy,requests
 orientation = portrait
-osx.kivy_version = 2.1.0
 fullscreen = 0
-
-[buildozer]
-log_level = 2
-warn_on_root = 1
+android.permissions = INTERNET
+android.api = 34
+android.minapi = 26
+android.ndk_api = 26
+android.archs = arm64-v8a, armeabi-v7a
