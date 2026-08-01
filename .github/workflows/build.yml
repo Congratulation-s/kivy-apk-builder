@@ -42,11 +42,9 @@ jobs:
         id: compile
         run: |
           export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
-          # บังคับล็อกทูลเชนให้อยู่บน Python 3.11 เพื่อสยบบั๊ก Python 3.14 ห้ามแอบสุ่มเวอร์ชัน
           export P4A_python_version="3.11"
           
-          # ล้างประวัติเก่าที่เคยบั๊กทิ้งไปให้หมดก่อนบิลด์ใหม่
-          buildozer android clean
+          # 🔥 ถอดคำสั่ง buildozer android clean ออก เพื่อไม่ให้ไฟล์ล็อกโดนลบทำลายทิ้งก่อนเขียนข้อมูล
           buildozer -v android debug > full_build.log 2>&1
 
       - name: Show Error Log Only If Failed
