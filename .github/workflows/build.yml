@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,23 +18,43 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev libstdc++6 zip unzip libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
+
+      - name: Install Buildozer
+        run: |
+          pip install --quiet --upgrade pip
+          pip install --quiet buildozer==1.5.0 cython==0.29.36
+
       - name: Prepare Files
         run: |
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
 
-      - name: Build APK with Production Buildozer Action
-        # 🔥 สลับมาใช้เครื่องมือเบาพิเศษสากล ป้องกัน RAM ฝั่งคลาวด์เต็มและเคลียร์บั๊กพังดื้อๆ
-        uses: ArtemSBulgakov/buildozer-action@v1
-        with:
-          workdir: .
-          buildozer_version: stable
-        env:
-          # สั่งล็อกไม่ให้ตัวคอนเทนเนอร์วิ่งอัปเดตตัวเองซ้ำซ้อนจนเครื่องค้าง
-          APP_ANDROID_ACCEPT_SDK_LICENSE: "True"
-          APP_ANDROID_SKIP_UPDATE: "True"
+      - name: Compile Kivy APK Directly
+        run: |
+          export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
+          export P4A_python_version="3.11"
+          buildozer -v android debug > full_build.log 2>&1
 
-      - name: Upload APK Artifact
+      - name: Show Error Log Only If Failed
+        if: failure()
+        run: |
+          echo "=========================================================="
+          echo "🎯 POINT OF FAILURE (LAST 40 LINES OF LOG):"
+          echo "=========================================================="
+          tail -n 40 full_build.log
+          echo "=========================================================="
+
+      - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: m3u8-player-apk
