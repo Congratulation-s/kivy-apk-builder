@@ -18,7 +18,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK (Official Github Tool)
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Setup Python
@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Pure Buildozer Dependencies
+      - name: Install Buildozer Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev
@@ -36,30 +36,29 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
-      - name: Auto-Locate and Link SDK Structure
+      - name: Prepare Workspace Files
         run: |
-          # 1. จัดวางไฟล์โค้ดแอปให้อยู่ถูกตำแหน่งนอกสุดล่วงหน้าเพื่อความถูกต้อง
+          # ค้นหาและดึงไฟล์คอนฟิกหลักมาไว้ที่โฟลเดอร์นอกสุดเพื่อไม่ให้ Buildozer หามันไม่เจอ
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
-          
-          # 2. จำลองโฟลเดอร์โครงสร้างที่ Buildozer ตัวเก่าตามหา
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
-          
-          # 3. ทำการผูกสะพานเชื่อมลิงก์ (Symlink) จาก Android SDK แท้ของระบบเข้าหา Buildozer ทันที
-          ln -s $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-          
-          # 4. บังคับยิงสิทธิ์กดยอมรับสัญญาอนุญาตล่วงหน้าทุกรูปแบบ (รวมถึง Build-Tools 37 ตัวล่าสุดด้วย)
-          mkdir -p ~/.android && touch ~/.android/repositories.cfg
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Build APK without License Errors
+      - name: Build APK with Auto-Path Injection
         env:
-          # 🔥 บังคับเปิดตัวแปรระบบของแอนดรอยด์เพื่อสั่งข้ามหน้าต่างสัญญาลิขสิทธิ์ทุกเงื่อนไข
+          # 🔥 ส่วนสำคัญ: บังคับส่งค่าโครงสร้างระบบจริงให้ทูลเชนรับทราบโดยไม่ต้องใช้ Symlink
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
           ANDROID_AUTO_ACCEPT_SDK_LICENSES: 'true'
         run: |
-          # ใช้คำสั่งส่งคีย์ 'y' ครอบกระบวนการรันอย่างเป็นทางการ
-          yes | buildozer -v android debug
+          # ยอมรับข้อตกลงลิขสิทธิ์ทั้งหมดของ SDK ผ่านทูลเชนมาตรฐานระบบก่อนเริ่มทำงาน
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           
+          # ส่งผ่านค่าตัวแปรตำแหน่งระบบลงไปในขณะสั่งรันคำสั่งแพ็กเกจ Buildozer
+          export ANDROID_SDK_PATH="$ANDROID_HOME"
+          export ANDROID_NDK_PATH="$ANDROID_HOME/ndk/27.3.13750724"
+          
+          # เริ่มต้นกระบวนการคอมไพล์แอปพลิเคชัน
+          yes | buildozer -v android debug
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
