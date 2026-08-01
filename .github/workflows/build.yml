@@ -1,23 +1,46 @@
 name: Build Kivy APK
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
 
 jobs:
   build-android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build APK with Docker
-        run: |
-          docker pull artemsbulgakov/buildozer:latest
-          docker run --rm -v ${{ github.workspace }}:/home/user/app artemsbulgakov/buildozer:latest buildozer android debug
+      - name: Setup Java 17 (Required for Android API 34)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Upload APK
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies for Video Player
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y scons build-essential libcleanfeed-dev viewnior libgstreamer1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev
+          sudo apt-get install -y ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev libavdevice-dev
+
+      - name: Install Buildozer and Cython
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33
+
+      - name: Build APK with Buildozer
+        run: |
+          buildozer -v android debug
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kivy-apk
+          name: m3u8-player-apk
           path: bin/*.apk
+          
