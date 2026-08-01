@@ -38,7 +38,7 @@ jobs:
 
       - name: Auto-Locate and Link SDK Structure
         run: |
-          # 1. จัดวางไฟล์โค้ดแอปให้อยู่ถูกตำแหน่งนอกสุดล่วงหน้า
+          # 1. จัดวางไฟล์โค้ดแอปให้อยู่ถูกตำแหน่งนอกสุดล่วงหน้าเพื่อความถูกต้อง
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
           
@@ -48,15 +48,18 @@ jobs:
           # 3. ทำการผูกสะพานเชื่อมลิงก์ (Symlink) จาก Android SDK แท้ของระบบเข้าหา Buildozer ทันที
           ln -s $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
           
-          # 4. กดยอมรับสิทธิ์ลิขสิทธิ์ความปลอดภัยล่วงหน้าแก่ทุก API ทันที
+          # 4. บังคับยิงสิทธิ์กดยอมรับสัญญาอนุญาตล่วงหน้าทุกรูปแบบ (รวมถึง Build-Tools 37 ตัวล่าสุดด้วย)
           mkdir -p ~/.android && touch ~/.android/repositories.cfg
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Build APK without Zip Errors
+      - name: Build APK without License Errors
+        env:
+          # 🔥 บังคับเปิดตัวแปรระบบของแอนดรอยด์เพื่อสั่งข้ามหน้าต่างสัญญาลิขสิทธิ์ทุกเงื่อนไข
+          ANDROID_AUTO_ACCEPT_SDK_LICENSES: 'true'
         run: |
-          # สั่งรันประกอบไฟล์แอปพลิเคชันโดยตรงบนระบบคลาวด์ Ubuntu 
-          buildozer -v android debug
-
+          # ใช้คำสั่งส่งคีย์ 'y' ครอบกระบวนการรันอย่างเป็นทางการ
+          yes | buildozer -v android debug
+          
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
