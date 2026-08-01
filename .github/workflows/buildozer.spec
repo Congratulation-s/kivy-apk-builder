@@ -9,7 +9,10 @@ requirements = python3,kivy,requests
 orientation = portrait
 fullscreen = 0
 android.permissions = INTERNET
+
+# 🔒 ล็อกเวอร์ชันระบบแอนดรอยด์ให้ตรงกันเพื่อป้องกันคลาวด์เออเร่อ
 android.api = 34
 android.minapi = 26
 android.ndk_api = 26
+android.build_tools_version = 34.0.0
 android.archs = arm64-v8a, armeabi-v7a
