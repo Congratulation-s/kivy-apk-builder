@@ -18,19 +18,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Official Android SDK
-        # ดึงเครื่องมือและระบบจัดการ SDK จัดวางระบบเตรียมพร้อมใช้งานล่วงหน้า
-        uses: android-actions/setup-android@v3
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install System Dependencies
+      - name: Install System Dependencies & Native Aidl
         run: |
           sudo apt-get update
-          sudo apt-get install -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev
+          # 🔥 ส่วนสำคัญ: บังคับติดตั้ง aidl และ libstdc++6 ลงใน Linux หลักล่วงหน้าเพื่อตัดปัญหาเรื่องสัญญาลิขสิทธิ์
+          sudo apt-get install -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev libstdc++6 aidl
 
       - name: Install Buildozer and Cython
         run: |
@@ -44,20 +41,17 @@ jobs:
 
       - name: Compile Kivy APK Directly
         run: |
-          # 1. จัดสรรและส่งค่าตำแหน่งเครื่องมือสากลจากระเบียบระบบให้ Buildozer รับทราบ
-          export ANDROID_SDK_PATH="$ANDROID_HOME"
+          # 1. จำลองสร้างโฟลเดอร์โครงสร้างที่ Buildozer ตัวเก่ามองหา
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/build-tools/34.0.0
           
-          # ค้นหาตำแหน่งโฟลเดอร์ NDK บนเครื่องและดึงส่งเข้าตัวแปรระบบอัตโนมัติ
-          export ANDROID_NDK_PATH=$(ls -d $ANDROID_HOME/ndk/* | head -n 1)
+          # 2. ผูกลิงก์ (Symlink) เอาไฟล์ aidl จาก Linux แท้ที่เพิ่งติดตั้งมะกี้ เข้าไปเสิร์ฟให้ระบบภายในของ Buildozer โดยตรง
+          ln -s /usr/bin/aidl /home/runner/.buildozer/android/platform/android-sdk/build-tools/34.0.0/aidl
           
-          # 2. กดยอมรับลิขสิทธิ์ความปลอดภัยในระบบ SDK แท้ทั้งหมดล่วงหน้า
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          
-          # 3. บังคับยิงสิทธิ์กดยอมรับสัญญาอนุญาตผ่านตัวแปรระดับคำสั่งสากล
+          # 3. สั่งข้ามผ่านตัวแปรระดับคำสั่งสากล
           export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
           
-          # 4. เริ่มคอมไพล์ โดย Buildozer จะเข้าดึงไฟล์ 'aidl' จากตําแหน่งระบบแท้ไปใช้ทันที
-          yes | buildozer -v android debug
+          # 4. สั่งเริ่มบิลด์แอปพลิเคชัน
+          buildozer -v android debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
