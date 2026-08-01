@@ -18,6 +18,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Android SDK (Official Github Tool)
+        uses: android-actions/setup-android@v3
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -26,39 +29,32 @@ jobs:
       - name: Install Pure Buildozer Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev unzip curl
+          sudo apt-get install -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev
 
       - name: Install Buildozer and Cython
         run: |
           pip install --upgrade pip
           pip install buildozer cython==0.29.33
 
-      - name: Pre-Install Android SDK to Fix Sdkmanager Error
+      - name: Auto-Locate and Link SDK Structure
         run: |
           # 1. จัดวางไฟล์โค้ดแอปให้อยู่ถูกตำแหน่งนอกสุดล่วงหน้า
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
           
-          # 2. จำลองโฟลเดอร์ที่ Buildozer จะเรียกหาขึ้นมาล่วงหน้าแบบแมนนวล
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          # 2. จำลองโฟลเดอร์โครงสร้างที่ Buildozer ตัวเก่าตามหา
           mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
           
-          # 3. ดาวน์โหลด Commandline Tools ตัวอัปเดตล่าสุดของปี 2026 จากกูเกิลโดยตรงไม่ผ่านลิงก์พัง
-          curl -sL https://google.com -o cmdline.zip
-          unzip -q cmdline.zip
-          mv cmdline-tools/* /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/
-          rm -rf cmdline-tools cmdline.zip
+          # 3. ทำการผูกสะพานเชื่อมลิงก์ (Symlink) จาก Android SDK แท้ของระบบเข้าหา Buildozer ทันที
+          ln -s $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
           
-          # 4. ทำการเชื่อมโยงระบบ (Symlink) เพื่อหลอก Buildozer ตัวเก่าให้วิ่งเข้าหาโฟลเดอร์ใหม่ได้อย่างถูกต้อง
-          ln -s /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-          
-          # 5. กดยอมรับสิทธิ์การใช้งานล่วงหน้าทุกรูปแบบ ป้องกันปัญหาติดหน้าต่างคำถาม
+          # 4. กดยอมรับสิทธิ์ลิขสิทธิ์ความปลอดภัยล่วงหน้าแก่ทุก API ทันที
           mkdir -p ~/.android && touch ~/.android/repositories.cfg
-          yes | /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Build APK without Docker
+      - name: Build APK without Zip Errors
         run: |
-          # บังคับรันประกอบไฟล์แอปพลิเคชันโดยตรงบนระบบคลาวด์ Ubuntu 
+          # สั่งรันประกอบไฟล์แอปพลิเคชันโดยตรงบนระบบคลาวด์ Ubuntu 
           buildozer -v android debug
 
       - name: Upload APK Artifact
