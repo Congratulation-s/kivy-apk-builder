@@ -28,10 +28,11 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -qq -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev libstdc++6 zip unzip libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
 
-      - name: Install Buildozer
+      - name: Install Modern Buildozer & Cython
         run: |
           pip install --quiet --upgrade pip
-          pip install --quiet buildozer==1.5.0 cython==0.29.36
+          # 🔥 ส่วนสำคัญ: อัปเกรด Cython เป็นรุ่น 3.x ล่าสุด เพื่อให้แปลงรหัสผ่านด่านตรวจของ NDK r28c ได้อย่างสมบูรณ์
+          pip install --quiet buildozer cython>=3.0.0
 
       - name: Prepare Files
         run: |
