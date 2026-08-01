@@ -23,15 +23,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Dependencies
+      - name: Install System Dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -qq -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev libstdc++6 zip unzip
+          # 🔥 ส่วนสำคัญ: เพิ่มไลบรารีกราฟิก SDL2 ทั้งระบบเพื่อแก้ปัญหาความขัดแย้งของ Cython และปิดบั๊ก config.pxi
+          sudo apt-get install -qq -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev libstdc++6 zip unzip libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
 
-      - name: Install Buildozer
+      - name: Install Buildozer and Compatible Cython
         run: |
           pip install --quiet --upgrade pip
-          pip install --quiet buildozer cython==0.29.33
+          # 🔥 ขยับรุ่น Cython มาเป็น 0.29.36 เพื่อให้เสถียรกับการคอมไพล์สถาปัตยกรรมกราฟิกยุคใหม่
+          pip install --quiet buildozer cython==0.29.36
 
       - name: Prepare Files
         run: |
