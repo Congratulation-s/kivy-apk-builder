@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,22 +18,37 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev
+
+      - name: Install Buildozer and Cython
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33
+
       - name: Prepare Workspace Files
         run: |
-          # บังคับย้ายไฟล์คอนฟิกหลักมาอยู่ที่โฟลเดอร์ด้านนอกสุดเพื่อป้องการปัญหาระบบหาไฟล์ไม่เจอ
+          # ค้นหาและคัดลอกไฟล์การตั้งค่าไปไว้ตําแหน่งหลักชั้นนอกสุดเพื่อความถูกต้อง
           find . -name "buildozer.spec" -exec cp {} . \;
           find . -name "main.py" -exec cp {} . \;
 
-      - name: Build APK with Buildozer Action
-        # 🔥 แก้ไขจาก ArtemGovorov เป็น ArtemSBulgakov ซึ่งเป็นเวอร์ชันสากลและอัปเดตล่าสุดในปัจจุบัน
-        uses: ArtemSBulgakov/buildozer-action@v1
-        with:
-          workdir: .
-          buildozer_version: stable
-        env:
-          # แมปตำแหน่งของเครื่องมือจำลอง Android SDK/NDK แท้ของระบบเพื่อความถูกต้อง
-          ANDROID_SDK_PATH: /usr/local/lib/android/sdk
-          ANDROID_NDK_PATH: /usr/local/lib/android/sdk/ndk/27.3.13750724
+      - name: Compile Kivy APK Directly
+        run: |
+          # 1. สั่งยอมรับลิขสิทธิ์ทั้งหมดล่วงหน้าในขั้นตอนนี้โดยตรง
+          mkdir -p ~/.android && touch ~/.android/repositories.cfg
+          
+          # 2. บังคับล็อกปิดการอัปเดตซ้ำซ้อนผ่านตัวแปรระดับคำสั่งสากล
+          export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
+          
+          # 3. รันคำสั่งคอมไพล์โปรเจกต์ Kivy ทันที
+          yes | buildozer -v android debug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
