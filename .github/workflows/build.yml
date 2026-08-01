@@ -18,6 +18,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Official Android SDK Tools
+        # ดึงเครื่องมือจัดสรรระบบแอนดรอยด์แท้ที่มีโปรแกรมคอมไพล์เสร็จสรรพมาสแตนบายรอไว้
+        uses: android-actions/setup-android@v3
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -28,10 +32,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -qq -y scons build-essential python3-dev libffi-dev ssl-cert autoconf automake libtool pkg-config libltdl-dev zlib1g-dev libncurses5-dev libsqlite3-dev libstdc++6 zip unzip libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
 
-      - name: Install Buildozer & Target Cython
+      - name: Install Buildozer & Cython
         run: |
           pip install --quiet --upgrade pip
-          # บังคับล็อกเสถียรภาพ Cython 3.x คู่กับ NDK r28c ยุคปัจจุบัน เพื่อแก้บั๊ก compile พังดื้อๆ
           pip install --quiet buildozer cython>=3.0.0
 
       - name: Prepare Files
@@ -42,30 +45,26 @@ jobs:
       - name: Compile Kivy APK Directly
         id: compile
         run: |
+          # บังคับกดยอมรับสัญญาอนุญาตผ่านระดับสากล
           export ANDROID_AUTO_ACCEPT_SDK_LICENSES="true"
           export P4A_python_version="3.11"
           
-          # รันสร้างแอปแล้วบันทึกประวัติทั้งหมด
+          # 🔥 ไม้ตายสยบบั๊ก: บังคับจ่ายตำแหน่งเครื่องมือระบบแท้เข้าสู่ Buildozer โดยตรง ห้ามดาวน์โหลดหลอกซ้ำซ้อน
+          export ANDROID_SDK_PATH="$ANDROID_HOME"
+          export ANDROID_NDK_PATH="$ANDROID_HOME/ndk/27.3.13750724"
+          
+          # สั่งรันจัดระเบียบและแปลงแอปทันที
           buildozer -v android debug > full_build.log 2>&1
 
-      - name: Extract Clean HTML Log If Failed
-        # สคริปต์อัจฉริยะ: จะสกัดและพ่นเฉพาะ "เนื้อหา Error แท้ๆ ที่ไม่มีเครื่องหมาย # ปะปน" ออกมาโชว์ให้คุณเห็นไม่เกินครึ่งหน้าจอมือถือ
+      - name: Show Clean Error Log If Failed
         if: failure()
         run: |
           echo "=========================================================="
-          echo "🎯 ACTUAL ERROR LOG FOUND IN PROCESS:"
+          echo "🎯 ACTUAL COMPILATION ERROR LOG:"
           echo "=========================================================="
-          # กรองล้างประวัติขยะแวดล้อมและดึงจุดระเบิด 50 บรรทัดสุดท้ายออกแสดงผล
-          grep -v -E "^#|^[[:space:]]*#" full_build.log | tail -n 50 || tail -n 30 full_build.log
+          # กรองล้างประวัติขยะแวดล้อมและพ่นเฉพาะจุดที่ระบบผิดพลาดจริงออกแสดงผลสั้นๆ
+          grep -v -E "^#|^[[:space:]]*#" full_build.log | tail -n 40 || tail -n 25 full_build.log
           echo "=========================================================="
-
-      - name: Upload Full Log Artifact
-        # บังคับส่งประวัติ Log ฉบับเต็มออกเป็นปุ่มกดดาวน์โหลดให้คุณตรวจสอบบนมือถือได้ตลอดเวลา
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: buildozer-debug-log
-          path: full_build.log
 
       - name: Upload APK
         if: success()
